@@ -3,21 +3,28 @@ from langchain_openai import AzureChatOpenAI
 import os
 
 from third_parties.linkedin import scrape_linkedin_profile
+from agents.linkedin_lookup_agent import linkedin_lookup_agent
 
-summary_template: str = """
-    given the Linkedin information {information} about a person from I want you to create:
-    1. a short summary
-    2. two interesting facts about them
-"""
+def ice_break_with(name: str) -> str:
+    linkedin_username: str = linkedin_lookup_agent(name= name)
+    linkedin_data: str = scrape_linkedin_profile(linkedin_profile_url=linkedin_username, mock=True)
 
-summary_prompt_template = PromptTemplate(input_variables=["information"],
-                                                         template=summary_template)
+    summary_template: str = """
+        given the Linkedin information {information} about a person from I want you to create:
+        1. a short summary
+        2. two interesting facts about them
+    """
 
-llm = AzureChatOpenAI(temperature=0, azure_deployment=os.environ["AZURE_DEPLOYMENT_NAME"])
+    summary_prompt_template: PromptTemplate = PromptTemplate(input_variables=["information"],
+                                                            template=summary_template)
 
-chain = summary_prompt_template | llm
+    llm: AzureChatOpenAI = AzureChatOpenAI(temperature=0, azure_deployment=os.environ["AZURE_DEPLOYMENT_NAME"])
+
+    chain = summary_prompt_template | llm
+
+    result = chain.invoke(input={"information": linkedin_data})
+
+    print(result)
 
 if __name__ == '__main__':
-    linkedin_data = scrape_linkedin_profile("https://www.linkedin.com/in/eden-marco/", mock=True)
-    result = chain.invoke(input={"information": linkedin_data})
-    print(result)
+    ice_break_with(name= "Eden Marco")
