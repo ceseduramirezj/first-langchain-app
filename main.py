@@ -7,7 +7,9 @@ from third_parties.twitter import scrape_user_tweets
 from agents.linkedin_lookup_agent import linkedin_lookup_agent
 from agents.twitter_lookup_agent import twitter_lookup_agent
 
-def ice_break_with(name: str) -> str:
+from output_parsers import summary_parser
+
+def ice_break_with(name: str) :
     linkedin_username: str = linkedin_lookup_agent(name=name)
     linkedin_data: str = scrape_linkedin_profile(linkedin_profile_url=linkedin_username, mock=True)
 
@@ -19,18 +21,22 @@ def ice_break_with(name: str) -> str:
         and twitter posts {twitter_posts} I want you to create:
         1. a short summary
         2. two interesting facts about them
+
+        Use both information from twitter and Linkedin
+        \n{format_instructions}
     """
 
     summary_prompt_template: PromptTemplate = PromptTemplate(input_variables=["information", "twitter_posts"],
-                                                            template=summary_template)
+                                                            template=summary_template,
+                                                            partial_variables={"format_instructions": summary_parser.get_format_instructions()})
 
     llm: AzureChatOpenAI = AzureChatOpenAI(temperature=0, azure_deployment=os.environ["AZURE_DEPLOYMENT_NAME"])
 
-    chain = summary_prompt_template | llm
+    chain = summary_prompt_template | llm | summary_parser
 
     result = chain.invoke(input={"information": linkedin_data, "twitter_posts": tweets})
 
     print(result)
 
 if __name__ == '__main__':
-    ice_break_with(name= "Eden Marco Udemy")
+    ice_break_with(name= "Eden Marco")
