@@ -1,3 +1,5 @@
+from typing import Tuple
+
 from langchain.prompts.prompt import PromptTemplate
 from langchain_openai import AzureChatOpenAI
 import os
@@ -7,9 +9,9 @@ from third_parties.twitter import scrape_user_tweets
 from agents.linkedin_lookup_agent import linkedin_lookup_agent
 from agents.twitter_lookup_agent import twitter_lookup_agent
 
-from output_parsers import summary_parser
+from output_parsers import summary_parser, Summary
 
-def ice_break_with(name: str) :
+def ice_break_with(name: str) -> Tuple[Summary, str] :
     linkedin_username: str = linkedin_lookup_agent(name=name)
     linkedin_data: str = scrape_linkedin_profile(linkedin_profile_url=linkedin_username, mock=True)
 
@@ -34,9 +36,9 @@ def ice_break_with(name: str) :
 
     chain = summary_prompt_template | llm | summary_parser
 
-    result = chain.invoke(input={"information": linkedin_data, "twitter_posts": tweets})
+    result: Summary = chain.invoke(input={"information": linkedin_data, "twitter_posts": tweets})
 
-    print(result)
+    return result, linkedin_data.get("profile_pic_url")
 
 if __name__ == '__main__':
     ice_break_with(name= "Eden Marco")
